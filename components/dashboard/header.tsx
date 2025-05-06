@@ -3,9 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { signOut } from "next-auth/react"
 import { Bell, Menu, MessageSquare, Search, Settings, User, LogOut, HelpCircle } from "lucide-react"
-
+import {Session} from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -22,20 +21,11 @@ import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from "@/components/theme-toggle"
 import MobileSidebar from "./mobile-sidebar"
 
-interface HeaderProps {
-    user: {
-        id: string
-        name?: string | null
-        email?: string | null
-        profileImage?: string
-        role?: string
-    }
-}
-
-export default function DashboardHeader({ user }: HeaderProps) {
+export default function DashboardHeader({user} : Session) {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
     const router = useRouter()
     const { toast } = useToast()
+    
 
     const handleLogout = async () => {
         await fetch("/api/auth/seller-logout", {
@@ -58,11 +48,9 @@ export default function DashboardHeader({ user }: HeaderProps) {
             .substring(0, 2)
     }
 
-    const isAdmin = user.role === "admin"
-
     return (
         <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center px-4">
+            <div className="flex min-w-screen px-6 py-2">
                 <div className="flex items-center gap-4 md:gap-6">
                     <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileSidebarOpen(true)}>
                         <Menu className="h-5 w-5" />
@@ -70,7 +58,7 @@ export default function DashboardHeader({ user }: HeaderProps) {
                     </Button>
 
                     <Link
-                        href={isAdmin ? "/dashboard/admin" : "/dashboard"}
+                        href="/seller-dashboard"
                         className="flex items-center gap-2 font-semibold text-primary"
                     >
                         <svg
@@ -87,7 +75,7 @@ export default function DashboardHeader({ user }: HeaderProps) {
                             <path d="M8 11h8" />
                             <path d="M12 15V7" />
                         </svg>
-                        {isAdmin ? "Admin Dashboard" : "Seller Dashboard"}
+                        Seller Dashboard
                     </Link>
                 </div>
 
@@ -118,16 +106,16 @@ export default function DashboardHeader({ user }: HeaderProps) {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-full">
                                 <Avatar className="h-8 w-8 transition-transform duration-300 hover:scale-110">
-                                    <AvatarImage src={user.profileImage || ""} alt={user.name || "User"} />
-                                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                    <AvatarImage src={user.avatar || ""} alt={user.name || ""} />
+                                    <AvatarFallback>{getInitials("User")}</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                                    <p className="text-sm font-medium leading-none">{user.name || ""}</p>
+                                    <p className="text-xs leading-none text-muted-foreground">{user.email || ""}</p>
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
@@ -152,8 +140,7 @@ export default function DashboardHeader({ user }: HeaderProps) {
                     </DropdownMenu>
                 </div>
             </div>
-
-            <MobileSidebar user={user} isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
+            <MobileSidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
         </header>
     )
 }

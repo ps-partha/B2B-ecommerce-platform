@@ -1,41 +1,40 @@
 import type { NextRequest } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import prisma from "@/lib/prisma"
-import { successResponse, errorResponse } from "@/lib/utils/api-response"
 
 // Get all orders for the current user
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
 
     if (!session) {
-      return errorResponse("Unauthorized", 401)
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = Number.parseInt(session.user.id)
-    const { searchParams } = new URL(request.url)
-    const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "10")
-    const type = searchParams.get("type") || "all" // "purchases", "sales", or "all"
-    const status = searchParams.get("status") || undefined
+    const userId = Number(session.user.id);
+    const { searchParams } = new URL(request.url);
 
-    const skip = (page - 1) * limit
+    const page = Math.max(1, Number(searchParams.get("page") || "1"));
+    const limit = Math.max(1, Number(searchParams.get("limit") || "10"));
+    const type = searchParams.get("type") || "all"; // "purchases", "sales", "all"
+    const status = searchParams.get("status");
 
-    // Build where clause based on filters
-    const where: any = {}
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
 
     if (type === "purchases") {
-      where.buyerId = userId
+      where.buyerId = userId;
     } else if (type === "sales") {
-      where.sellerId = userId
+      where.sellerId = userId;
     } else {
-      // "all" - show both purchases and sales
-      where.OR = [{ buyerId: userId }, { sellerId: userId }]
+      where.OR = [{ buyerId: userId }, { sellerId: userId }];
     }
 
-    if (status) {
-      where.status = status
+    if (status && status !== "all") {
+      where.status = status;
     }
 
     const [orders, total] = await Promise.all([
@@ -54,10 +53,14 @@ export async function GET(request: NextRequest) {
           seller: {
             select: {
               id: true,
-              name: true,
-              username: true,
-              avatar: true,
-              isVerified: true,
+              user: {
+                select: {
+                  name: true,
+                  username: true,
+                  avatar: true,
+                  isVerified: true,
+                },
+              },
             },
           },
           listing: {
@@ -80,9 +83,9 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
       }),
       prisma.order.count({ where }),
-    ])
+    ]);
 
-    return successResponse({
+    return Response.json({
       orders,
       pagination: {
         total,
@@ -90,10 +93,10 @@ export async function GET(request: NextRequest) {
         limit,
         pages: Math.ceil(total / limit),
       },
-    })
+    });
   } catch (error) {
-    console.error("Error fetching orders:", error)
-    return errorResponse("Failed to fetch orders", 500)
+    console.error("Error fetching orders:", error);
+    return Response.json({ error: "Failed to fetch orders" }, { status: 500 });
   }
 }
 
@@ -102,17 +105,19 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
-      return errorResponse("Unauthorized", 401)
+    if (!session || session.user.role !== "USER") {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const userId = Number.parseInt(session.user.id)
     const body = await request.json()
     const { listingId, paymentMethod } = body
 
+    console.log(listingId)
+
     // Validate input
     if (!listingId) {
-      return errorResponse("Missing required fields", 400)
+      return Response.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     // Check if listing exists and is available
@@ -127,18 +132,18 @@ export async function POST(request: NextRequest) {
     })
 
     if (!listing) {
-      return errorResponse("Listing not found or not available", 404)
+      return Response.json({ error: "Listing not found or not available" }, { status: 404 })
     }
 
     // Prevent buying own listing
     if (listing.sellerId === userId) {
-      return errorResponse("Cannot purchase your own listing", 400)
+      return Response.json({ error: "Cannot purchase your own listing" }, { status: 400 })
     }
 
     // Calculate fees
-    const platformFee = Number.parseFloat((listing.price * 0.05).toFixed(2)) // 5% platform fee
-    const transactionFee = Number.parseFloat((listing.price * 0.02).toFixed(2)) // 2% transaction fee
-    const totalAmount = Number.parseFloat((listing.price + platformFee + transactionFee).toFixed(2))
+    const platformFee = Number.parseFloat(((Number(listing.price) || 0) * 0.05).toFixed(2)) // 5% platform fee
+    const transactionFee = Number.parseFloat((Number(listing.price) * 0.02).toFixed(2)) // 2% transaction fee
+    const totalAmount = Number.parseFloat((Number(listing.price) + platformFee + transactionFee).toFixed(2))
 
     // Generate order number
     const orderNumber = `ORD-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
@@ -159,15 +164,6 @@ export async function POST(request: NextRequest) {
       },
       include: {
         buyer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-            avatar: true,
-          },
-        },
-        seller: {
           select: {
             id: true,
             name: true,
@@ -198,9 +194,9 @@ export async function POST(request: NextRequest) {
       ],
     })
 
-    return successResponse(order, "Order created successfully", 201)
+    return Response.json({ order, message: "Order created successfully" }, { status: 201 })
   } catch (error) {
     console.error("Error creating order:", error)
-    return errorResponse("Failed to create order", 500)
+    return Response.json({ error: "Failed to create order" }, { status: 500 })
   }
 }

@@ -30,18 +30,11 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 
 interface MobileSidebarProps {
-  user: {
-    id: string
-    name?: string | null
-    email?: string | null
-    profileImage?: string
-    role?: string
-  }
   isOpen: boolean
   onClose: () => void
 }
 
-export default function MobileSidebar({ user, isOpen, onClose }: MobileSidebarProps) {
+export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { toast } = useToast()
@@ -61,115 +54,65 @@ export default function MobileSidebar({ user, isOpen, onClose }: MobileSidebarPr
     onClose()
   }
 
-  const isAdmin = user.role === "admin"
-
-  const sellerLinks = [
-    {
-      title: "Overview",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      active: pathname === "/dashboard",
-    },
-    {
-      title: "My Listings",
-      href: "/dashboard/listings",
-      icon: Package,
-      active: pathname.startsWith("/dashboard/listings"),
-    },
-    {
-      title: "Orders",
-      href: "/dashboard/orders",
-      icon: ShoppingCart,
-      active: pathname.startsWith("/dashboard/orders"),
-      badge: 5,
-    },
-    {
-      title: "Messages",
-      href: "/dashboard/messages",
-      icon: MessageSquare,
-      active: pathname.startsWith("/dashboard/messages"),
-      badge: 3,
-    },
-    {
-      title: "Favorites",
-      href: "/dashboard/favorites",
-      icon: Heart,
-      active: pathname.startsWith("/dashboard/favorites"),
-    },
-    {
-      title: "Payments",
-      href: "/dashboard/payments",
-      icon: CreditCard,
-      active: pathname.startsWith("/dashboard/payments"),
-    },
-    {
-      title: "Analytics",
-      href: "/dashboard/analytics",
-      icon: BarChart3,
-      active: pathname.startsWith("/dashboard/analytics"),
-    },
-  ]
-
   const adminLinks = [
     {
       title: "Overview",
-      href: "/dashboard/admin",
+      href: "/admin-dashboard",
       icon: LayoutDashboard,
-      active: pathname === "/dashboard/admin",
+      active: pathname === "/admin-dashboard",
     },
     {
       title: "Users",
-      href: "/dashboard/admin/users",
+      href: "/admin-dashboard/users",
       icon: Users,
-      active: pathname.startsWith("/dashboard/admin/users"),
+      active: pathname.startsWith("/admin-dashboard/users"),
     },
     {
       title: "Sellers",
-      href: "/dashboard/admin/sellers",
+      href: "/admin-dashboard/sellers",
       icon: Store,
-      active: pathname.startsWith("/dashboard/admin/sellers"),
+      active: pathname.startsWith("/admin-dashboard/sellers"),
     },
     {
       title: "Listings",
-      href: "/dashboard/admin/listings",
+      href: "/admin-dashboard/listings",
       icon: Package,
-      active: pathname.startsWith("/dashboard/admin/listings"),
+      active: pathname.startsWith("/admin-dashboard/listings"),
     },
     {
       title: "Orders",
-      href: "/dashboard/admin/orders",
+      href: "/admin-dashboard/orders",
       icon: ShoppingCart,
-      active: pathname.startsWith("/dashboard/admin/orders"),
+      active: pathname.startsWith("/admin-dashboard/orders"),
     },
     {
       title: "Categories",
-      href: "/dashboard/admin/categories",
+      href: "/admin-dashboard/categories",
       icon: Tag,
-      active: pathname.startsWith("/dashboard/admin/categories"),
+      active: pathname.startsWith("/admin-dashboard/categories"),
     },
     {
       title: "Reports",
-      href: "/dashboard/admin/reports",
+      href: "/admin-dashboard/reports",
       icon: FileText,
-      active: pathname.startsWith("/dashboard/admin/reports"),
+      active: pathname.startsWith("/admin-dashboard/reports"),
       badge: 2,
     },
     {
       title: "Moderation",
-      href: "/dashboard/admin/moderation",
+      href: "/admin-dashboard/moderation",
       icon: Shield,
-      active: pathname.startsWith("/dashboard/admin/moderation"),
+      active: pathname.startsWith("/admin-dashboard/moderation"),
       badge: 7,
     },
     {
       title: "Analytics",
-      href: "/dashboard/admin/analytics",
+      href: "/admin-dashboard/analytics",
       icon: BarChart3,
-      active: pathname.startsWith("/dashboard/admin/analytics"),
+      active: pathname.startsWith("/admin-dashboard/analytics"),
     },
   ]
 
-  const links = isAdmin ? adminLinks : sellerLinks
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -177,10 +120,10 @@ export default function MobileSidebar({ user, isOpen, onClose }: MobileSidebarPr
         <ScrollArea className="h-[calc(100vh-4rem)]">
           <div className="px-3 py-2">
             <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-              {isAdmin ? "Admin Panel" : "Seller Dashboard"}
+            Seller Dashboard
             </h2>
             <div className="space-y-1">
-              {links.map((link) => (
+              {adminLinks.map((link) => (
                 <button
                   key={link.href}
                   onClick={() => handleNavigation(link.href)}
@@ -230,21 +173,7 @@ export default function MobileSidebar({ user, isOpen, onClose }: MobileSidebarPr
                 <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
                 <span>Account</span>
               </button>
-              {isAdmin ? (
-                <button
-                  onClick={() => handleNavigation("/dashboard/settings/site")}
-                  className={cn(
-                    "w-full flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                    pathname.startsWith("/dashboard/settings/site")
-                      ? "bg-accent text-accent-foreground"
-                      : "transparent",
-                  )}
-                >
-                  <Store className="mr-3 h-4 w-4 text-muted-foreground" />
-                  <span>Site Settings</span>
-                </button>
-              ) : (
-                <button
+              <button
                   onClick={() => handleNavigation("/dashboard/settings/shipping")}
                   className={cn(
                     "w-full flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
@@ -256,7 +185,6 @@ export default function MobileSidebar({ user, isOpen, onClose }: MobileSidebarPr
                   <Truck className="mr-3 h-4 w-4 text-muted-foreground" />
                   <span>Shipping</span>
                 </button>
-              )}
               <button
                 onClick={() => handleNavigation("/help")}
                 className="w-full flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"

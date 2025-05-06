@@ -7,52 +7,48 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, email, password, accountType } = body
 
-    // Validate input
     if (!name || !email || !password || !accountType) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Check if user already exists
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // Check if email is already taken (regardless of role)
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     })
 
     if (existingUser) {
       return NextResponse.json({ error: "User with this email already exists" }, { status: 409 })
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user with appropriate role
-    const isSeller = accountType === "seller"
-    const role = isSeller ? "SELLER" : "USER"
+    // Determine role
+    const role = accountType.toUpperCase() // "buyer" -> "BUYER", "admin" -> "ADMIN", etc.
 
-    // Create user
+    // Build data object
+    const userData: any = {
+      name,
+      email: normalizedEmail,
+      password: hashedPassword,
+      role,
+      settings: { create: {} },
+    }
+
+    // If seller, attach sellerProfile
+    if (role === "SELLER") {
+      userData.sellerProfile = { create: {} }
+    }
+
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role,
-        // Create seller profile if user is registering as a seller
-        ...(isSeller && {
-          sellerProfile: {
-            create: {},
-          },
-        }),
-        // Create default settings for user
-        settings: {
-          create: {},
-        },
-      },
+      data: userData,
       include: {
         sellerProfile: true,
         settings: true,
       },
     })
 
-    // Return user without password
     const { password: _, ...userWithoutPassword } = user
 
     return NextResponse.json(

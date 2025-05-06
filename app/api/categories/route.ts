@@ -1,8 +1,7 @@
-import type { NextRequest } from "next/server"
+import { NextResponse } from "next/server"
+import prisma from "@/lib/prisma"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
-import { successResponse, errorResponse } from "@/lib/utils/api-response"
 
 // Get all categories
 export async function GET() {
@@ -16,20 +15,23 @@ export async function GET() {
       orderBy: { name: "asc" },
     })
 
-    return successResponse(categories)
+    return NextResponse.json({
+      success: true,
+      categories: categories,
+    })
   } catch (error) {
     console.error("Error fetching categories:", error)
-    return errorResponse("Failed to fetch categories", 500)
+    return NextResponse.json({ success: false, message: "Failed to fetch categories" }, { status: 500 })
   }
 }
 
 // Create a new category (admin only)
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session || session.user.role !== "ADMIN") {
-      return errorResponse("Unauthorized", 403)
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 })
     }
 
     const body = await request.json()
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingCategory) {
-      return errorResponse("Category with this name already exists", 409)
+      return NextResponse.json({ success: false, message: "Category with this name already exists" }, { status: 409 })
     }
 
     // Create category
@@ -59,9 +61,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return successResponse(category, "Category created successfully", 201)
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Category created successfully",
+        data: category,
+      },
+      { status: 201 },
+    )
   } catch (error) {
     console.error("Error creating category:", error)
-    return errorResponse("Failed to create category", 500)
+    return NextResponse.json({ success: false, message: "Failed to create category" }, { status: 500 })
   }
 }

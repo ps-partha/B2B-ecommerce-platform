@@ -1,13 +1,12 @@
 "use client"
 
 import type React from "react"
-
+import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const { data : session } = useSession();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -64,47 +64,53 @@ export default function LoginPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) return
-
-    setIsLoading(true)
-    setErrors((prev) => ({ ...prev, general: "" }))
-
+    e.preventDefault();
+  
+    if (!validateForm()) return;
+  
+    setIsLoading(true);
+    setErrors((prev) => ({ ...prev, general: "" }));
+  
     try {
       const result = await signIn("credentials", {
         redirect: false,
         email: formData.email,
         password: formData.password,
-      })
-
+      });
+  
       if (result?.error) {
-        setErrors((prev) => ({ ...prev, general: "Invalid email or password" }))
+        setErrors((prev) => ({ ...prev, general: "Invalid email or password" }));
         toast({
           title: "Login failed",
           description: "Invalid email or password. Please try again.",
           variant: "destructive",
-        })
+        });
       } else {
+
         toast({
           title: "Login successful",
           description: "Welcome back to SecureTrade!",
           variant: "success",
-        })
-        router.push(callbackUrl)
+        });
+  
+        if (session?.user.role === "SELLER") {
+          router.push("/seller-dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error) {
-      console.error("Login error:", error)
-      setErrors((prev) => ({ ...prev, general: "An error occurred during login" }))
+      console.error("Login error:", error);
+      setErrors((prev) => ({ ...prev, general: "An error occurred during login" }));
       toast({
         title: "Login failed",
         description: "An error occurred. Please try again later.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-[1000px] overflow-hidden rounded-xl border shadow-lg transition-all duration-300 hover:shadow-xl dark:shadow-none dark:hover:shadow-primary/10 md:grid-cols-2">
@@ -223,7 +229,6 @@ export default function LoginPage() {
               </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
             </div>
-
             <Button
               type="submit"
               className="w-full bg-primary text-white transition-all duration-300 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"

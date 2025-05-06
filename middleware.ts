@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const PUBLIC_PATHS = ['/auth/seller/login']
+const PUBLIC_PATHS = ['/auth/seller/login','/admin/']
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('seller_token')?.value

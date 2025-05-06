@@ -6,7 +6,6 @@ import {
   Clock,
   Heart,
   Loader2,
-  LogOut,
   Menu,
   MessageSquare,
   Play,
@@ -38,10 +37,16 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useToast } from "./ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import router from "next/router";
+import { usePathname } from "next/navigation";
+import { useCart } from "@/context/cart-context"
+
+
 export default function TopNav() {
   const { data: session, status } = useSession();
+  const { items } = useCart();
+  const total_cart = items.length || 0
   const user = session?.user || null;
-  const isLoggedIn = user?.isLoggedIn || false;
+  const isLoggedIn = user?.role === "USER" || false;
   const isLoading = status === "loading";
   const { notifications, markAsRead, markAllAsRead, refresh } =
     useNotifications();
@@ -75,6 +80,7 @@ export default function TopNav() {
         return <Bell className="h-4 w-4 text-primary" />;
     }
   };
+
 
   const handleMarkAsRead = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -115,6 +121,12 @@ export default function TopNav() {
 
     router.push("/");
   };
+
+  const path = usePathname();
+
+  if (path.startsWith("/admin-dashboard") || path.startsWith("/seller-dashboard") || path.startsWith("/admin-login")) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -268,9 +280,8 @@ export default function TopNav() {
                             <Link
                               href={notification.link || "#"}
                               key={notification.id}
-                              className={`flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors ${
-                                !notification.read ? "bg-muted/30" : ""
-                              }`}
+                              className={`flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors ${!notification.read ? "bg-muted/30" : ""
+                                }`}
                             >
                               <div className="flex-shrink-0 mt-1">
                                 {getNotificationIcon(notification.type)}
@@ -328,7 +339,7 @@ export default function TopNav() {
                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </div>
                       ) : notifications.filter((n) => n.type === "system")
-                          .length > 0 ? (
+                        .length > 0 ? (
                         <div>
                           {notifications
                             .filter((n) => n.type === "system")
@@ -336,9 +347,8 @@ export default function TopNav() {
                               <Link
                                 href={notification.link || "#"}
                                 key={notification.id}
-                                className={`flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors ${
-                                  !notification.read ? "bg-muted/30" : ""
-                                }`}
+                                className={`flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors ${!notification.read ? "bg-muted/30" : ""
+                                  }`}
                               >
                                 <div className="flex-shrink-0 mt-1">
                                   {getNotificationIcon(notification.type)}
@@ -454,14 +464,19 @@ export default function TopNav() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="transition-transform duration-300 hover:rotate-12"
-          >
-            <ShoppingCart className="h-5 w-5" />
-          </Button>
-          <AuthButton/>
+
+          <Link href="/cart">
+            <Button variant="ghost" size="icon" className="relative transition-transform duration-300 hover:rotate-12">
+              <ShoppingCart className="h-5 w-5" />
+              {total_cart > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 px-1 bg-primary text-white text-xs flex items-center justify-center rounded-full">
+                  {total_cart > 9 ? "9+" : total_cart}
+                </span>
+              )}
+            </Button>
+          </Link>
+
+          <AuthButton />
         </div>
 
         {/* Mobile Menu */}
@@ -535,7 +550,7 @@ export default function TopNav() {
               </nav>
 
               <div className="flex gap-2">
-                
+
                 <Button variant="outline" size="sm" className="flex-1">
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Cart

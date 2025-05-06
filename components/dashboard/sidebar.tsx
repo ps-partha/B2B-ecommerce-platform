@@ -25,20 +25,11 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-
-interface SidebarProps {
-  user: {
-    id: string
-    name?: string | null
-    email?: string | null
-    profileImage?: string
-    role?: string
-  }
-}
-
-export default function DashboardSidebar({ user }: SidebarProps) {
+import { useSession } from "next-auth/react"
+export default function DashboardSidebar() {
   const pathname = usePathname()
   const [isMobile, setIsMobile] = useState(false)
+  const { data : session } = useSession();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -57,125 +48,47 @@ export default function DashboardSidebar({ user }: SidebarProps) {
     return null
   }
 
-  const isAdmin = user.role === "admin"
 
   const sellerLinks = [
     {
       title: "Overview",
-      href: "/dashboard",
+      href: "/seller-dashboard",
       icon: LayoutDashboard,
-      active: pathname === "/dashboard",
-    },
-    {
-      title: "My Listings",
-      href: "/dashboard/listings",
-      icon: Package,
-      active: pathname.startsWith("/dashboard/listings"),
-    },
-    {
-      title: "Orders",
-      href: "/dashboard/orders",
-      icon: ShoppingCart,
-      active: pathname.startsWith("/dashboard/orders"),
-      badge: 5,
+      active: pathname === "/seller-dashboard",
     },
     {
       title: "Messages",
-      href: "/dashboard/messages",
-      icon: MessageSquare,
-      active: pathname.startsWith("/dashboard/messages"),
-      badge: 3,
-    },
-    {
-      title: "Favorites",
-      href: "/dashboard/favorites",
-      icon: Heart,
-      active: pathname.startsWith("/dashboard/favorites"),
-    },
-    {
-      title: "Payments",
-      href: "/dashboard/payments",
-      icon: CreditCard,
-      active: pathname.startsWith("/dashboard/payments"),
-    },
-    {
-      title: "Analytics",
-      href: "/dashboard/analytics",
-      icon: BarChart3,
-      active: pathname.startsWith("/dashboard/analytics"),
-    },
-  ]
-
-  const adminLinks = [
-    {
-      title: "Overview",
-      href: "/dashboard/admin",
-      icon: LayoutDashboard,
-      active: pathname === "/dashboard/admin",
-    },
-    {
-      title: "Users",
-      href: "/dashboard/admin/users",
-      icon: Users,
-      active: pathname.startsWith("/dashboard/admin/users"),
-    },
-    {
-      title: "Sellers",
-      href: "/dashboard/admin/sellers",
+      href: "/seller-dashboard/messages",
       icon: Store,
-      active: pathname.startsWith("/dashboard/admin/sellers"),
+      active: pathname.startsWith("/seller-dashboard/messages"),
     },
     {
       title: "Listings",
-      href: "/dashboard/admin/listings",
+      href: "/seller-dashboard/listings",
       icon: Package,
-      active: pathname.startsWith("/dashboard/admin/listings"),
+      active: pathname.startsWith("/seller-dashboard/listings"),
     },
     {
       title: "Orders",
-      href: "/dashboard/admin/orders",
+      href: "/seller-dashboard/orders",
       icon: ShoppingCart,
-      active: pathname.startsWith("/dashboard/admin/orders"),
+      active: pathname.startsWith("/seller-dashboard/orders"),
     },
     {
-      title: "Categories",
-      href: "/dashboard/admin/categories",
-      icon: Tag,
-      active: pathname.startsWith("/dashboard/admin/categories"),
-    },
-    {
-      title: "Reports",
-      href: "/dashboard/admin/reports",
+      title: "Payments",
+      href: "/seller-dashboard/payments",
       icon: FileText,
-      active: pathname.startsWith("/dashboard/admin/reports"),
+      active: pathname.startsWith("/seller-dashboard/payments"),
       badge: 2,
-    },
-    {
-      title: "Moderation",
-      href: "/dashboard/admin/moderation",
-      icon: Shield,
-      active: pathname.startsWith("/dashboard/admin/moderation"),
-      badge: 7,
-    },
-    {
-      title: "Analytics",
-      href: "/dashboard/admin/analytics",
-      icon: BarChart3,
-      active: pathname.startsWith("/dashboard/admin/analytics"),
-    },
+    }
   ]
-
-  const links = isAdmin ? adminLinks : sellerLinks
 
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-background md:block">
-      <ScrollArea className="h-[calc(100vh-4rem)] py-6">
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            {isAdmin ? "Admin Panel" : "Seller Dashboard"}
-          </h2>
+      <ScrollArea className="h-[calc(100vh-4rem)] py-2">
+        <div className="px-3 py-3"> 
           <div className="space-y-1">
-            {links.map((link) => (
+            {sellerLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -221,31 +134,6 @@ export default function DashboardSidebar({ user }: SidebarProps) {
               <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
               <span>Account</span>
             </Link>
-            {isAdmin ? (
-              <Link
-                href="/dashboard/settings/site"
-                className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                  pathname.startsWith("/dashboard/settings/site") ? "bg-accent text-accent-foreground" : "transparent",
-                )}
-              >
-                <Store className="mr-3 h-4 w-4 text-muted-foreground" />
-                <span>Site Settings</span>
-              </Link>
-            ) : (
-              <Link
-                href="/dashboard/settings/shipping"
-                className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                  pathname.startsWith("/dashboard/settings/shipping")
-                    ? "bg-accent text-accent-foreground"
-                    : "transparent",
-                )}
-              >
-                <Truck className="mr-3 h-4 w-4 text-muted-foreground" />
-                <span>Shipping</span>
-              </Link>
-            )}
           </div>
         </div>
       </ScrollArea>

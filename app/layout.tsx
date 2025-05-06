@@ -5,8 +5,8 @@ import { SessionProvider } from "@/components/auth/session-provider";
 
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
-import LayoutWrapper from "@/components/layout-wrapper"; // import it here
-
+import LayoutWrapper from "@/components/layout-wrapper/layout-wrapper"; // import it here
+import { CartProvider } from "@/context/cart-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -25,11 +25,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <SessionProvider>
+            <CartProvider>
             <LayoutWrapper>
-              <div className="flex min-h-screen flex-col">
-                <main className="flex-1">{children}</main>
-              </div>
+              <main className="flex-1">{children}</main>
             </LayoutWrapper>
+            </CartProvider>
             <Toaster />
           </SessionProvider>
         </ThemeProvider>

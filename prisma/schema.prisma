@@ -96,6 +96,12 @@ model Listing {
   originalPrice   Decimal?      @db.Decimal(10, 2)
   status          ListingStatus @default(ACTIVE)
   featured        Boolean       @default(false)
+  slug            String        @unique
+  
+  // New fields for enhanced product information
+  features        Json          // Stored as JSON array of feature strings
+  productInfo     Json          // Stored as JSON array of key-value pairs
+  transferInfo    Json          // Stored as JSON object with delivery time and returns policy
   
   // Relations
   sellerId        Int

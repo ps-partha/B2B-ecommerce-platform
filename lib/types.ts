@@ -7,27 +7,75 @@ export interface PaginationInfo {
   limit: number;
 }
 
-
-export interface UserProfile {
-  username: string
-  displayName?: string
-  profileImage?: string
-  coverImage?: string
-  bio?: string
-  location?: string
-  website?: string
-  isVerified: boolean
-  isCurrentUser: boolean
-  joinedAt: string
-  followers: number
-  following: number
-  videoCount: number
-  postCount: number
-  totalViews: number
-  totalLikes: number
-  totalComments: number
-  topics?: string[]
+export interface ViewProduct {
+  id: number;
+  title: string;
+  description: string;
+  price: string;
+  originalPrice: string;
+  status: string;
+  featured: boolean;
+  slug: string;
+  features: string[];
+  productInfo: {
+    key: string;
+    value: string;
+  }[];
+  transferInfo: {
+    deliveryTime: string;
+    returns: string;
+  };
+  sellerId: number;
+  categoryId: number;
+  views: number;
+  sales: number;
+  createdAt: string;
+  updatedAt: string;
+  seller: {
+    id: number;
+    userId: number;
+    bio: string | null;
+    location: string | null;
+    sellerRating: number | null;
+    totalSales: number;
+    responseRate: number;
+    responseTime: string | null;
+    completedOrders: number;
+    cancellationRate: number;
+    balance: string;
+    createdAt: string;
+    updatedAt: string;
+    user: {
+      id: number;
+      name: string;
+      avatar: string | null;
+      username: string | null;
+    };
+  };
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    icon: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  images: {
+    id: number;
+    url: string;
+    listingId: number;
+    isMain: boolean;
+    createdAt: string;
+  }[];
+  reviews: any[]; // you can define a Review interface if needed
+  _count: {
+    reviews: number;
+  };
+  isFavorited: boolean;
+  averageRating: number;
 }
+
 
 
 export interface Product {
@@ -56,4 +104,28 @@ export interface Notification {
   link?: string
   icon?: ReactNode
   user_id?: number
+}
+
+export interface UserSession {
+  id: string
+  role: string
+  name?: string | null
+  email?: string | null
+  avatar?: string | null
+  isLoggedIn?: boolean | null
+  isSeller?: boolean | null
+  sellerProfileId?: string | null
+}
+
+export interface Session {
+  user: {
+    id: string
+    role: string
+    name?: string | null
+    email?: string | null
+    avatar?: string | null
+    isLoggedIn?: boolean | null
+    isSeller?: boolean | null
+    sellerProfileId?: string | null
+  }
 }

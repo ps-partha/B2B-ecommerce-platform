@@ -1,0 +1,77 @@
+import { PrismaClient } from "@prisma/client"
+
+const prisma = new PrismaClient()
+
+async function insertCategories() {
+  try {
+    // Categories to insert
+    const categories = [
+      {
+        name: "Gaming Accounts",
+        slug: "gaming-accounts",
+        description: "Buy and sell gaming accounts for popular games",
+        icon: "gamepad",
+      },
+      {
+        name: "Social Media Accounts",
+        slug: "social-media-accounts",
+        description: "Social media accounts with established followers",
+        icon: "users",
+      },
+      {
+        name: "Digital Products",
+        slug: "digital-products",
+        description: "Digital goods including software, ebooks, and more",
+        icon: "file",
+      },
+      {
+        name: "Services",
+        slug: "services",
+        description: "Digital services including design, development, and marketing",
+        icon: "briefcase",
+      },
+      {
+        name: "Domains & Websites",
+        slug: "domains-websites",
+        description: "Established domains and websites for sale",
+        icon: "globe",
+      },
+      {
+        name: "Subscriptions",
+        slug: "subscriptions",
+        description: "Premium subscription accounts for various platforms",
+        icon: "credit-card",
+      },
+      {
+        name: "Virtual Items",
+        slug: "virtual-items",
+        description: "In-game items, skins, and virtual collectibles",
+        icon: "package",
+      },
+      {
+        name: "Other",
+        slug: "other",
+        description: "Other digital products and services",
+        icon: "more-horizontal",
+      },
+    ]
+
+    // Insert categories
+    for (const category of categories) {
+      await prisma.category.upsert({
+        where: { slug: category.slug },
+        update: category,
+        create: category,
+      })
+      console.log(`Inserted/updated category: ${category.name}`)
+    }
+
+    console.log("All categories inserted successfully!")
+  } catch (error) {
+    console.error("Error inserting categories:", error)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+insertCategories()

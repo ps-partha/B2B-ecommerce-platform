@@ -1,32 +1,45 @@
-import NextAuth, { type AuthOptions, type AdapterUser } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import FacebookProvider from "next-auth/providers/facebook"
-import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import prisma from "@/lib/prisma"
+// app/api/auth/[...nextauth]/route.ts
 
-// Extend AdapterUser, User, and Session to include custom properties
+import NextAuth, { type AuthOptions } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import FacebookProvider from "next-auth/providers/facebook";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import prisma from "@/lib/prisma";
+
+// Extend NextAuth types to include custom properties
 declare module "next-auth" {
-  interface AdapterUser {
-    avatar?: string | null
-  }
   interface User {
-    avatar?: string | null
-    isSeller?: boolean | null
-    sellerProfileId : boolean | null
-    isLoggedIn : boolean | null
+    avatar?: string | null;
+    isSeller?: boolean | null;
+    sellerProfileId?: string | null;
+    isLoggedIn?: boolean | null;
   }
+
   interface Session {
     user: {
-      id: string
-      role: string
-      name?: string | null
-      email?: string | null
-      avatar?: string | null
-      isLoggedIn?: boolean | null
-      isSeller?: boolean | null
-      sellerProfileId?: string | null
-    }
+      id: string;
+      role: string;
+      name?: string | null;
+      email?: string | null;
+      avatar?: string | null;
+      isLoggedIn?: boolean | null;
+      isSeller?: boolean | null;
+      sellerProfileId?: string | null;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: string;
+    name?: string | null;
+    email?: string | null;
+    avatar?: string | null;
+    isLoggedIn?: boolean | null;
+    isSeller?: boolean | null;
+    sellerProfileId?: string | null;
   }
 }
 
@@ -45,120 +58,122 @@ export const authOptions: AuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+        console.log(credentials.email)
 
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email,
+            email: credentials.email
           },
-        })
+        });
 
-        // Only allow regular users to login through this flow
-        if (!user || !user.password || user.role === "SELLER") return null
+        if (!user || !user.password ) {
+          return null;
+        }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password)
-        if (!isValid) return null
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) {
+          return null;
+        }
 
         return {
           id: user.id.toString(),
           email: user.email,
           name: user.name,
           role: user.role,
-          profileImage: user.avatar || null,
+          avatar: user.avatar || null,
           isLoggedIn: true,
-          isSeller: false,
-          sellerProfileId: null,
-        }
+          isSeller: user.role === "SELLER"
+        };
       },
     }),
   ],
 
   callbacks: {
-    // Handle OAuth Sign-in user creation
     async signIn({ user, account, profile }) {
       if ((account?.provider === "google" || account?.provider === "facebook") && profile?.email) {
         const existingUser = await prisma.user.findUnique({
           where: {
-            email: profile.email
+            email: profile.email,
           },
-        })
+        });
 
         if (!existingUser) {
-          // Create new user if they don't exist - always as regular USER
           const newUser = await prisma.user.create({
             data: {
               email: profile.email,
               name: profile.name || "user",
               avatar: (profile as any).picture || (profile as any).image?.url || "",
-              role: "USER", // Always create as regular user
+              role: "USER",
               emailVerified: null,
-              password : null,
+              password: null,
               settings: {
                 create: {},
               },
             },
-          })
+          });
 
-          user.id = newUser.id.toString()
-          user.name = newUser.name
-          user.role = newUser.role
-          user.avatar = newUser.avatar
-          user.isSeller = false
-          user.sellerProfileId = null
+          user.id = newUser.id.toString();
+          user.name = newUser.name;
+          user.role = newUser.role;
+          user.avatar = newUser.avatar;
+          user.isSeller = false;
+          user.sellerProfileId = null;
         } else {
-          // If existing user is a SELLER, prevent login through OAuth
           if (existingUser.role === "SELLER") {
-            return false
+            return false;
           }
 
-          user.id = existingUser.id.toString()
-          user.name = existingUser.name
-          user.role = existingUser.role
-          user.avatar = existingUser.avatar
-          user.isSeller = false
-          user.sellerProfileId = null
+          user.id = existingUser.id.toString();
+          user.name = existingUser.name;
+          user.role = existingUser.role;
+          user.avatar = existingUser.avatar;
+          user.isSeller = false;
+          user.sellerProfileId = null;
         }
 
-        user.isLoggedIn = true
+        user.isLoggedIn = true;
       }
-      return true
+      return true;
     },
 
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.name = user.name
-        token.role = user.role
-        token.email = user.email
-        token.avatar = user.avatar
-        token.isLoggedIn = user.isLoggedIn
-        token.avatar = user.avatar as string
-        token.sellerProfileId = user.sellerProfileId
+        token.id = user.id;
+        token.name = user.name;
+        token.role = user.role;
+        token.email = user.email;
+        token.avatar = user.avatar;
+        token.isLoggedIn = user.isLoggedIn;
+        token.isSeller = user.isSeller;
+        token.sellerProfileId = user.sellerProfileId;
       }
-      return token
+      return token;
     },
 
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.email = token.email as string
-        session.user.name = token.name as string
-        session.user.avatar = token.profileImage as string
-        session.user.isLoggedIn = token.isLoggedIn as boolean
-        session.user.isSeller = token.isSeller as boolean
-        session.user.sellerProfileId = token.sellerProfileId as string
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.email = token.email;
+        session.user.name = token.name;
+        session.user.avatar = token.avatar;
+        session.user.isLoggedIn = token.isLoggedIn;
+        session.user.isSeller = token.isSeller;
+        session.user.sellerProfileId = token.sellerProfileId;
       }
-      return session
+      return session;
     },
   },
 
   pages: {
     signIn: "/auth/login",
-    error: "/auth/error", // Add an error page to handle login failures
+    error: "/auth/error",
   },
 
   session: {
@@ -166,8 +181,8 @@ export const authOptions: AuthOptions = {
   },
 
   secret: process.env.JWT_SECRET!,
-}
+};
 
 // NextAuth handler
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
